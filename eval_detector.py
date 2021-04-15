@@ -118,34 +118,43 @@ if done_tweaking:
 
 # For a fixed IoU threshold, vary the confidence thresholds.
 # The code below gives an example on the training set for one IoU threshold. 
-iou_thr = 0.5
 
-thresholds = []
-for fname in preds_train:
-    if len(preds_train[fname]) > 0:
-        for pred in preds_train[fname]:
-            thresholds.append(pred[4])
+def get_pr_vals(iou_thr):
 
-confidence_thrs = np.sort(thresholds)
-#confidence_thrs = np.sort(np.array([preds_train[fname][4] for fname in preds_train if len(preds_train[fname]) == 5],dtype=float)) # using (ascending) list of confidence scores as thresholds
-tp_train = np.zeros(len(confidence_thrs))
-fp_train = np.zeros(len(confidence_thrs))
-fn_train = np.zeros(len(confidence_thrs))
-for i, conf_thr in enumerate(confidence_thrs):
-    tp_train[i], fp_train[i], fn_train[i] = compute_counts(preds_train, gts_train, iou_thr=iou_thr, conf_thr=conf_thr)
+    thresholds = []
+    for fname in preds_train:
+        if len(preds_train[fname]) > 0:
+            for pred in preds_train[fname]:
+                thresholds.append(pred[4])
 
-recall = [tp_train[i] / (tp_train[i]+fn_train[i]) for i in range(len(confidence_thrs))]
+    confidence_thrs = np.sort(thresholds)
+    #confidence_thrs = np.sort(np.array([preds_train[fname][4] for fname in preds_train if len(preds_train[fname]) == 5],dtype=float)) # using (ascending) list of confidence scores as thresholds
+    tp_train = np.zeros(len(confidence_thrs))
+    fp_train = np.zeros(len(confidence_thrs))
+    fn_train = np.zeros(len(confidence_thrs))
+    for i, conf_thr in enumerate(confidence_thrs):
+        tp_train[i], fp_train[i], fn_train[i] = compute_counts(preds_train, gts_train, iou_thr=iou_thr, conf_thr=conf_thr)
 
-precision = [tp_train[i] / (tp_train[i]+fp_train[i]) for i in range(len(confidence_thrs))]
-plt.scatter(recall, precision)
+    recall = [tp_train[i] / (tp_train[i]+fn_train[i]) for i in range(len(confidence_thrs))]
 
-for i, conf_thr in enumerate(confidence_thrs):
-    plt.annotate('%0.2f' % conf_thr, (recall[i], precision[i]))
-plt.title('PR Curve for IOU Threshold: %0.2f' % iou_thr)
+    precision = [tp_train[i] / (tp_train[i]+fp_train[i]) for i in range(len(confidence_thrs))]
+    return recall, precision
+
+
+fig = plt.figure()
+ax = fig.add_subplot(111)
+for iou_thr in [0.25, 0.5, 0.75]:
+    recall, precision = get_pr_vals(iou_thr)
+    ax.scatter(recall, precision, label='%0.2f' % iou_thr)
+
+
+plt.title('PR Curve different IOU Thresholds')
+plt.legend()
 plt.xlabel('Recall')
 plt.ylabel('Precision')
 plt.show()
-plt.savefig('pr_iou-%0.2f.jpg' % (iou_thr))
+plt.savefig('pr.jpg')
+
 
 if done_tweaking:
     print('Code for plotting test set PR curves.')
