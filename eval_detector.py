@@ -152,8 +152,8 @@ plt.title('PR Curve different IOU Thresholds')
 plt.legend()
 plt.xlabel('Recall')
 plt.ylabel('Precision')
-plt.show()
 plt.savefig('pr.jpg')
+plt.show()
 
 
 if done_tweaking:
