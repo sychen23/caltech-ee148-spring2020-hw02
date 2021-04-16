@@ -93,51 +93,56 @@ file_names_test = np.load(os.path.join(split_path,'file_names_test.npy'))
 
 # Set this parameter to True when you're done with algorithm development:
 done_tweaking = False
+weakened = False
 
 '''
 Load training data. 
 '''
-with open(os.path.join(preds_path,'preds_train.json'),'r') as f:
-    preds_train = json.load(f)
-    
-with open(os.path.join(gts_path, 'annotations_train.json'),'r') as f:
-    gts_train = json.load(f)
 
 if done_tweaking:
+    preds_filename = 'preds_test.json'
+    gts_filename = 'annotations_test.json'
+    title = 'PR Curve across IOU Thresholds on Testing Data'
+    img_name = 'pr-test.jpg'
+elif weakened:
+    preds_filename = 'preds_train-weakened.json'
+    gts_filename = 'annotations_train-weakened.json'
+    title = 'PR Curve across IOU Thresholds on Training Data (weakened)'
+    img_name = 'pr-train-weakened.jpg'
+else:
+    preds_filename = 'preds_train.json'
+    gts_filename = 'annotations_train.json'
+    title = 'PR Curve across IOU Thresholds on Training Data'
+    img_name = 'pr-train.jpg'
+
+with open(os.path.join(preds_path, preds_filename),'r') as f:
+    preds = json.load(f)
     
-    '''
-    Load test data.
-    '''
-    
-    with open(os.path.join(preds_path,'preds_test.json'),'r') as f:
-        preds_test = json.load(f)
-        
-    with open(os.path.join(gts_path, 'annotations_test.json'),'r') as f:
-        gts_test = json.load(f)
+with open(os.path.join(gts_path, gts_filename),'r') as f:
+    gts = json.load(f)
 
 
 # For a fixed IoU threshold, vary the confidence thresholds.
-# The code below gives an example on the training set for one IoU threshold. 
 
 def get_pr_vals(iou_thr):
 
     thresholds = []
-    for fname in preds_train:
-        if len(preds_train[fname]) > 0:
-            for pred in preds_train[fname]:
+    for fname in preds:
+        if len(preds[fname]) > 0:
+            for pred in preds[fname]:
                 thresholds.append(pred[4])
 
     confidence_thrs = np.sort(thresholds)
     #confidence_thrs = np.sort(np.array([preds_train[fname][4] for fname in preds_train if len(preds_train[fname]) == 5],dtype=float)) # using (ascending) list of confidence scores as thresholds
-    tp_train = np.zeros(len(confidence_thrs))
-    fp_train = np.zeros(len(confidence_thrs))
-    fn_train = np.zeros(len(confidence_thrs))
+    tp = np.zeros(len(confidence_thrs))
+    fp = np.zeros(len(confidence_thrs))
+    fn = np.zeros(len(confidence_thrs))
     for i, conf_thr in enumerate(confidence_thrs):
-        tp_train[i], fp_train[i], fn_train[i] = compute_counts(preds_train, gts_train, iou_thr=iou_thr, conf_thr=conf_thr)
+        tp[i], fp[i], fn[i] = compute_counts(preds, gts, iou_thr=iou_thr, conf_thr=conf_thr)
 
-    recall = [tp_train[i] / (tp_train[i]+fn_train[i]) for i in range(len(confidence_thrs))]
+    recall = [tp[i] / (tp[i]+fn[i]) for i in range(len(confidence_thrs))]
 
-    precision = [tp_train[i] / (tp_train[i]+fp_train[i]) for i in range(len(confidence_thrs))]
+    precision = [tp[i] / (tp[i]+fp[i]) for i in range(len(confidence_thrs))]
     return recall, precision
 
 
@@ -148,13 +153,9 @@ for iou_thr in [0.25, 0.5, 0.75]:
     ax.scatter(recall, precision, label='%0.2f' % iou_thr)
 
 
-plt.title('PR Curve different IOU Thresholds')
+plt.title(title)
 plt.legend()
 plt.xlabel('Recall')
 plt.ylabel('Precision')
-plt.savefig('pr.jpg')
+plt.savefig(img_name)
 plt.show()
-
-
-if done_tweaking:
-    print('Code for plotting test set PR curves.')
