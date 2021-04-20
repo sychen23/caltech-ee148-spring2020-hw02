@@ -92,8 +92,8 @@ file_names_train = np.load(os.path.join(split_path,'file_names_train.npy'))
 file_names_test = np.load(os.path.join(split_path,'file_names_test.npy'))
 
 # Set this parameter to True when you're done with algorithm development:
-done_tweaking = True
-weakened = False
+done_tweaking = False
+weakened = True
 
 '''
 Load training data. 
@@ -106,7 +106,7 @@ if done_tweaking:
     img_name = 'pr-test.jpg'
 elif weakened:
     preds_filename = 'preds_train-weakened.json'
-    gts_filename = 'annotations_train-weakened.json'
+    gts_filename = 'annotations_train.json'
     title = 'PR Curve across IOU Thresholds on Training Data (weakened)'
     img_name = 'pr-train-weakened.jpg'
 else:
